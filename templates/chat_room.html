@@ -1,0 +1,1543 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<!-- Page Wrapper -->
+<div id="wrapper" class="">
+    <div class="flex-column col-2 col-md-3 p-0 chat-list-col">
+
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light  topbar static-top medium-shadow navbar-profile">
+            <!-- Topbar Navbar -->
+            <ul class="navbar-nav mr-auto">
+
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow nav-logo">
+                    <a class="nav-link logo" href="{{ url('index') }}">
+                        {% if SETTINGS.logo %}
+                            <img class="mr-2 large" src="{{MEDIA_URL}}/settings/{{SETTINGS.logo}}">
+                        {% else %}
+                            <img class="mr-2 large" src="{{STATIC_URL}}/img/logo.png">
+                        {% endif %}
+                        {% if SETTINGS.small_logo %}
+                            <img class="mr-2 small" src="{{MEDIA_URL}}/settings/{{SETTINGS.small_logo}}">
+                        {% else %}
+                            <img class="mr-2 small" src="{{STATIC_URL}}/img/logo_small.png">
+                        {% endif %}
+                    </a>
+                </li>
+
+            </ul>
+            <div class="pr-2 status-change">
+                <a class="nav-link" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="badge badge-success dropdown-toggle dropdown-toggle-split">
+                        {{ USER.first_name }}
+                        <span class="caret"></span>
+                    </span>
+                    <span class="current-status"><i class="fa fa-circle {{ USER.user_status_class }}"></i></span>
+                </a>
+                <!-- Dropdown - User Information -->
+                <div class="dropdown-menu dropdown-menu-right lite-shadow animated--grow-in" aria-labelledby="userDropdown">
+                    <a class="dropdown-item change-status" href="#" data-status="1">
+                        <i class="fa fa-circle fa-fw mr-2 online"></i>Online
+                    </a>
+                    <a class="dropdown-item change-status" href="#" data-status="2">
+                        <i class="fa fa-circle fa-fw mr-2 offline"></i>Offline
+                    </a>
+                    <a class="dropdown-item change-status" href="#" data-status="3">
+                        <i class="fa fa-circle fa-fw mr-2 busy"></i>Busy
+                    </a>
+                    <a class="dropdown-item change-status" href="#" data-status="4">
+                        <i class="fa fa-circle fa-fw mr-2 away"></i>Away
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalProfile">
+                        <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Profile
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Logout
+                    </a>
+                </div>
+            </div>
+            <div class=" mobile-chat-list-toggle">
+                <button class="chat-list-toggle btn-success btn-circle btn-sm">
+                    <i class="fa fa-angle-left"></i>
+                </button>
+            </div>
+        </nav>
+        <!-- End of Topbar -->
+
+        <!-- Nav pills -->
+        <ul class="nav nav-pills nav-justified nav-sidebar">
+            <li class="nav-item">
+                <a class="nav-link active" data-toggle="pill" href="#chats">Chats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-toggle="pill" href="#favs">Favorite</a>
+            </li>
+        </ul>
+
+        <div class="btn-group nav-sidebar-mobile">
+            <button type="button" class="btn btn-default mobile-sidebar-icon"><i class="fas fa-comments"></i></button>
+            <button type="button" class="btn btn-default dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
+                <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item mobile-sidebar-toggle" data-toggle="pill" href="#chats"><i class="fas fa-comments"></i> Chats</a>
+                <a class="dropdown-item mobile-sidebar-toggle" data-toggle="pill" href="#favs"><i class="far fa-heart"></i> Favourits</a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <!-- Tab panes -->
+                <div class="tab-content tab-sidebar">
+                    <div class="tab-pane container active" id="chats">
+                        <ul class="online-list"></ul>
+                    </div>
+                    <div class="tab-pane container fade" id="groups">
+                        <ul class="group-list"></ul>
+                    </div>
+                    <div class="tab-pane container fade" id="favs">
+                        <ul class="fav-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column p-0">
+        <!-- Main Content -->
+        <div id="content">
+            <!-- Begin Page Content -->
+            <div class="container-fluid p-0 ">
+                <!-- Content Row -->
+                <div class="row  m-0">
+                    <div class="col-xl-12 col-md-12 pl-0 pr-0 chat-messages-col ">
+                        {{updated_list}}
+                        <input type="hidden" id="active_user" value="" />
+                        <input type="hidden" id="active_group" value="{{chat_group.id}}" />
+                        <input type="hidden" id="active_room" value="{{chat_room.id}}" />
+                        <input type="hidden" id="last_chat_id" value="{{last_chat_id}}" />
+                        <input type="hidden" id="chat_meta_id" value="" />
+                        <input type="hidden" id="last_updated_chat_time" value="{{last_updated_chat_time}}" />
+
+                        <nav class="navbar navbar-expand navbar-light topbar static-top lite-shadow">
+                            <!-- Right Sidebar Toggle -->
+                            <button class="chat-list-toggle btn btn-success btn-circle btn-sm">
+                                <i class="fa fa fa-bars"></i>
+                            </button>
+                            <div class="chat-header">
+                                <h1 class="chat-title"></h1>
+                                <small class="chat-slug"></small>
+                                <small class="is-typing"><span>typing...</span> <i class="fa fa-pencil-alt"></i></small>
+                            </div>
+                            <!-- Left Sidebar Toggle -->
+                            <button class="selected-chat-toggle ml-auto btn btn-info btn-circle btn-sm enable-selected-chat">
+                                <i class="fa fa-info"></i>
+                            </button>
+                        </nav>
+                        <div class="card-body message-card-body messages height-fix">
+
+                            <div class="chat-scroll">
+                                <div class="dropzone" style="display:none">
+                                    <div class="dz-message" data-dz-message>
+                                        <i class="fa fa-upload"></i>
+                                        <span>Drag images here or click here</span>
+                                    </div>
+                                    <button class="file-upload-button btn btn-primary btn-block send-files">Send all images</button>
+                                </div>
+                                <ul class="chats">
+                                </ul>
+                            </div>
+
+                            <div class="type-message">
+                                <div class="input-message-write rowx">
+                                    <div class="p-0 message-input-col justify-content-centerx align-self-centerx">
+                                        <div class="chat-buttons">
+                                            <span id="hidable-btns">
+                                                <div class="message-gif btn-msg" role="button"><img class="btn-tooltip" data-toggle="tooltip" data-placement="top" title="Send gif" src="{{STATIC_URL}}/img/gif_icon.png"  /></div>
+                                                <div class="message-sticker btn btn-msg" role="button" data-toggle="tooltip" data-placement="top" title="Send sticker" ><img src="{{STATIC_URL}}/img/sticker_icon.png"  /></div>
+                                            </span>
+                                            <div class="message-files btn-msg" role="button" data-toggle="tooltip" data-placement="top" title="Attach image" ><img src="{{STATIC_URL}}/img/image_icon.png"  /></div>
+                                            <div class="buttons-showhide btn-msg" role="button" data-toggle="tooltip" data-placement="top" title="Show / Hide" ><i class="fas fa-chevron-left"></i></div>
+                                        </div>
+
+                                        <div class="chat-box">
+                                            <textarea class="form-control" name="message_content" rows="1"  id="message_content" placeholder="Type a message..."></textarea>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="type-blocked-overlay" style="display:none;">
+                                    Blocked User
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+    </div>
+    <!-- End of Content Wrapper -->
+    <div class="flex-column col-3 distant  p-0 selected-chat-col">
+        <nav class="navbar navbar-expand navbar-light  topbar static-top lite-shadow">
+            <button class="selected-chat-toggle ml-auto btn btn-info btn-circle btn-sm">
+                <i class="fa  fa fa-info"></i>
+            </button>
+        </nav>
+
+        <div class="selected-chat height-fix active-group-info">
+
+            <div class="selected-chat-info">
+                <img class="img-responsive rounded-circle active-group-cover" width="300px" src="{{STATIC_URL}}/img/group.png"  alt="">
+                <p class="selected-chat-name active-group-name"></p>
+            </div>
+            <div class="selected-chat-actions">
+                <a href="#" class="btn btn-warning btn-icon-split btn-xs active-group-mute" data-is-muted="0">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-bell-slash"></i>
+                    </span>
+                    <span class="text">Mute</span>
+                </a>
+            </div>
+
+            <div class="card-header chat-data-header d-flex flex-row align-items-center justify-content-between" data-toggle="collapse" href="#group-users-tab" aria-expanded="false" aria-controls="multiCollapseExample1">
+                <h6 class="m-0">Group Users</h6>
+                <div class="dropdown no-arrow">
+                    <i class="fa fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div class="selected-chat-profile height-fix active-group-users collapse show multi-collapse" id="group-users-tab" >
+            </div>
+
+            <div class="card-header chat-data-header d-flex flex-row align-items-center justify-content-between" data-toggle="collapse" href="#shared-media-tab" aria-expanded="false" aria-controls="multiCollapseExample1">
+                <h6 class="m-0">
+                    Recent Image
+                </h6>
+                <div class="dropdown no-arrow">
+                    <i class="fa fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div class="selected-chat-profile collapse show multi-collapse" id="shared-media-tab">
+
+                <div class="row p-3 recent-img-chat" data-pswp-uid="1">
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="selected-chat height-fix active-user-info" style="display:none">
+
+            <div class="selected-chat-info">
+                <img class="img-responsive rounded-circle active-user-avatar" width="300px" src="{{STATIC_URL}}/img/user.jpg"  alt="">
+                <p class="selected-chat-name active-user-title"></p>
+                <p class="speech-bubble active-user-about"></p>
+            </div>
+            <div class="selected-chat-actions">
+                <a href="#" class="btn btn-info btn-icon-split btn-xs active-user-favourite" data-is-favourite="0">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-thumbs-up"></i>
+                    </span>
+                    <span class="text">Favorite <i class="far fa-check-circle"></i></span>
+                </a>
+                <a href="#" class="btn btn-danger btn-icon-split btn-xs active-user-block" data-is-blocked="0">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-ban"></i>
+                    </span>
+                    <span class="text">Block</span>
+                </a>
+                <a href="#" class="btn btn-warning btn-icon-split btn-xs active-user-mute" data-is-muted="0">
+                    <span class="icon text-white-50">
+                        <i class="fas fa-bell-slash"></i>
+                    </span>
+                    <span class="text">Mute</span>
+                </a>
+            </div>
+
+            <div class="card-header chat-data-header d-flex flex-row align-items-center justify-content-between" data-toggle="collapse" href="#profile-tab" aria-expanded="false" aria-controls="multiCollapseExample1">
+                <h6 class="m-0">Profile</h6>
+                <div class="dropdown no-arrow">
+                    <i class="fa fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div class="selected-chat-profile collapse show multi-collapse" id="profile-tab">
+                <div class="row">
+                    <div class="col-4">
+                        <label>Name</label>
+                    </div>
+                    <div class="col-8 active-user-name">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <label>Birthday</label>
+                    </div>
+                    <div class="col-8 active-user-dob">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-4">
+                        <label>Gender</label>
+                    </div>
+                    <div class="col-8 active-user-gender">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-header chat-data-header d-flex flex-row align-items-center justify-content-between" data-toggle="collapse" href="#shared-media-tab" aria-expanded="false" aria-controls="multiCollapseExample1">
+                <h6 class="m-0">
+                    Recent Image
+                </h6>
+                <div class="dropdown no-arrow">
+                    <i class="fa fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div class="selected-chat-profile collapse show multi-collapse" id="shared-media-tab">
+
+                <div class="row p-3 recent-img-chat" data-pswp-uid="1">
+
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+
+    <div class="gif-content" style="display:none;">
+    	<div class="gifs">
+    		<span class="loading" style="display: none;"></span>
+    		<ul class="gif-list"></ul>
+    	</div>
+    </div>
+
+    <div class="sticker-content" style="display:none;">
+    	<div class="strickers">
+    		<span class="loading" style="display: none;"></span>
+            <ul class="nav nav-pills mb-3 sticker-nav" id="pills-tab" role="tablist"></ul>
+            <div class="tab-content sticker-tab-content" id="pills-tabContent"> </div>
+    	</div>
+    </div>
+
+    <!-- Photoswipe Start. Root element of PhotoSwipe. Must have class pswp -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="pswp__bg"></div>
+        <div class="pswp__scroll-wrap">
+            <div class="pswp__container">
+                <div class="pswp__item"></div>
+                <div class="pswp__item"></div>
+                <div class="pswp__item"></div>
+            </div>
+            <div class="pswp__ui pswp__ui--hidden">
+                <div class="pswp__top-bar">
+                    <div class="pswp__counter"></div>
+                    <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                    <button class="pswp__button pswp__button--share" title="Share"></button>
+                    <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                    <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                    <div class="pswp__preloader">
+                        <div class="pswp__preloader__icn">
+                          <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                    <div class="pswp__share-tooltip"></div>
+                </div>
+                <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+                </button>
+                <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+                </button>
+                <div class="pswp__caption">
+                    <div class="pswp__caption__center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--/Photoswipe End -->
+
+    <!-- Video Modal -->
+  <div class="modal fade" id="video-modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-body">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+               <span aria-hidden="true">&times;</span>
+             </button>
+            <iframe id="video-iframe" src="{{STATIC_URL}}/img/loading-video.gif" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="" frameborder="0" ></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- End of Page Wrapper -->
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+
+    (function($) {
+
+        "use strict";
+
+        var lastTypedTime = new Date(0); // it's 01/01/1970
+        var typingDelayMilliSe = {{SETTINGS.typing_status_check_seconds}}*1000; // how long user can "think about his spelling"
+        var onlineCheckMilliSe = {{SETTINGS.online_status_check_seconds}}*1000;
+        var chat_receive_seconds = {{SETTINGS.chat_receive_seconds}}*1000;
+        var user_list_check_seconds = {{SETTINGS.user_list_check_seconds}}*1000;
+        var chat_status_check_seconds = {{SETTINGS.chat_status_check_seconds}}*1000;
+        var system_timezone = '{{SETTINGS.timezone}}';
+        var system_timezone_offset = '{{SYSTEM_TIMEZONE_OFFSET}}';
+        var user_timezone = "{{USER.timezone}}";
+        var tenor_api_key = '{{SETTINGS.tenor_api_key}}';
+        var tenor_gif_limit = "{{SETTINGS.tenor_gif_limit|default('15')}}";
+        var chat_date = "";
+        var is_typing = 0;
+        var previous_height = $('.chat-scroll')[0].scrollHeight;
+        var audio = new Audio('{{STATIC_URL}}/audio/chat_sound.mp3');
+
+        // chat user list show or hide
+        $(".chat-list-toggle").on('click', function(e) {
+            if ($(window).width() <= 425) {
+                $(".chat-list-col").toggleClass("col-3 col-12", 500, "easeOutExpo");
+                $(".chat-list-col").toggleClass("adjust-height");
+                $(".chat-list-col").toggleClass("mobile-mini-user-list");
+                $(".mobile-chat-list-toggle").toggle();
+                $(".status-change").toggle();
+                $(".logo img.small").toggle();
+                $(".logo img.large").toggle();
+            } else {
+                $(".chat-list-col").toggleClass("mini-user-list", 500, "easeOutExpo");
+                $(".status-change").toggle();
+                $(".logo img.small").toggle();
+                $(".logo img.large").toggle();
+            }
+
+            if ($(window).width() <= 576) {
+                if($(".nav-sidebar").is(":visible")){
+                    $(".nav-sidebar").hide();
+                }else{
+                    $(".nav-sidebar").css('display','flex');
+                }
+                $(".nav-sidebar-mobile").toggle();
+            }else{
+                if($(".nav-sidebar").is(":visible")){
+                    $(".nav-sidebar").hide();
+                }else{
+                    if ($(window).width() > 768) {
+                        $(".nav-sidebar").css('display','flex');
+                    }
+                }
+            }
+        });
+
+        // send gif, send stickers button show or hide
+        $(".buttons-showhide").on('click', function(e) {
+            $(".buttons-showhide i").toggleClass("fa-chevron-left fa-chevron-right");
+            if ($("#hidable-btns").is(":visible")) {
+                $("#hidable-btns").hide();
+                $(".chat-buttons").css("flex", "60px");
+                $(".chat-box").css("flex", "89%");
+            }else{
+                $("#hidable-btns").show();
+                $(".chat-buttons").css("flex", "150px");
+                $(".chat-box").css("flex", "76%");
+            }
+        });
+
+        // selected/active chat information show or hide
+        $(".selected-chat-toggle").on('click', function(e) {
+            if (($(window).width() <= 1024) && ($(window).width() >= 768 )) {
+                if($(".selected-chat-col").is(":visible")){
+                    $(".selected-chat-col").hide( "blind", {direction : "right", easing: 'easeOutExpo'}, 500);
+                    $(".selected-chat-col").removeClass("col-3 col-9");
+                }else{
+                    $(".selected-chat-col").addClass("col-3 col-9");
+                    $(".selected-chat-col").show("blind", {direction : "right",  easing: 'easeOutExpo'}, 500);
+                }
+            }else if ($(window).width() <= 768) {
+                $(".chat-messages-col").toggle();
+                if($(".selected-chat-col").is(":visible")){
+                    $(".selected-chat-col").hide( "blind", {direction : "right", easing: 'easeOutExpo'}, 500);
+                    $(".selected-chat-col").removeClass("col-3 col-10");
+                }else{
+                    $(".selected-chat-col").addClass("col-3 col-10");
+                    $(".selected-chat-col").show("blind", {direction : "right",  easing: 'easeOutExpo'}, 500);
+                }
+            } else {
+                if($(".selected-chat-col").is(":visible")){
+                    $(".selected-chat-col").hide( "blind", {direction : "right", easing: 'easeOutExpo'}, 500);
+                }else{
+                    $(".selected-chat-col").show( "blind", {direction : "right",  easing: 'easeOutExpo'}, 500);
+                }
+            }
+            $(".enable-selected-chat").toggle();
+        });
+
+        // selected chat info each section show or hide
+        $(".chat-data-header").on('click', function(e) {
+            $(this).find(".dropdown i").toggleClass("fa-angle-down fa-angle-right");
+        });
+
+        // new message save
+        function newMessage(message_data, message_type){
+            if (message_data === undefined) {
+                var message_data = $.sanitize($("#message_content").val());
+            }
+            if (message_type === undefined) {
+                var message_type = 1;
+            }
+            var random_id = Math.random();
+            if(message_data != ""){
+                var msg_obj = {};
+                msg_obj['sender_id'] = {{ USER.id }};
+                msg_obj['status'] = 1;
+                msg_obj['type'] = message_type;
+                msg_obj['avatar'] = "{{USER.avatar}}";
+                msg_obj['message'] = message_data;
+                msg_obj['random_id'] = random_id;
+                msg_obj['id'] = "";
+                msg_obj['time'] = moment().format('YYYY-MM-DD HH:mm:ss');
+                if (message_data != "") {
+                    createMessage(msg_obj, false, true);
+                    $('#message_content').val(null);
+                    $('.emojionearea-editor').empty();
+                }
+
+                var active_user = $("#active_user").val();
+                var active_group = $("#active_group").val();
+                var active_room = $("#active_room").val();
+                var chat_meta_id = $("#chat_meta_id").val();
+                if (active_user) {
+                    active_group = null;
+                }
+                $.ajax({
+                    url: "{{ url('ajax-save-message') }}",
+                    type: "POST",
+                    dataType: 'json',
+                    data: {
+                        csrftoken: '{{ csrf_token_ajax() }}',
+                        active_user: active_user,
+                        active_group: active_group,
+                        active_room: active_room,
+                        chat_meta_id: chat_meta_id,
+                        message_content: message_data,
+                        message_type: message_type,
+                        random_id: random_id,
+                    },
+                    success: function(data) {
+                        $("[data-random-id='" + data.random_id + "']").attr("id",data.id);
+                        $("[data-random-id='" + data.random_id + "']").find('.message-time').html(moment(data.time+system_timezone_offset).tz(user_timezone).format('hh:mm A'));
+                        $("[data-random-id='" + data.random_id + "']").find('.message-status').html('<i class="fa fa-check-double"></i>');
+                    }
+                });
+            }
+
+        }
+
+
+
+        $( document ).ready(function() {
+            // loader display when message loading
+            loading(".messages ","show");
+
+            // init tooptip
+            $(".btn-msg, .btn-tooltip").tooltip();
+
+            // init send gif popover
+            $(".message-gif").popover({
+                html : true,
+                sanitize: false,
+                trigger: "click",
+                content: $('.gif-content').html(),
+                placement: 'top',
+                title: `<div class="input-group input-group-sm gif-search-area">
+                          <input type="text" class="form-control gif-search-input" placeholder="Search GIFs via Tenor" style="z-index:0">
+                          <div class="input-group-append">
+                              <button class="btn btn-success gif-search-btn" type="button">Go</button>
+                           </div>
+                        </div>
+                        <button type="button" id="close-popover" class="close close-popover gif-close-btn" >&times;</button>`,
+            });
+
+            // init send sticker popover
+            $(".message-sticker").popover({
+                html : true,
+                sanitize: false,
+                trigger: "click",
+                content: $('.sticker-content').remove().html(),
+                title : 'Send Stickers<button type="button" id="close-popover" class="close close-popover" >&times;</button>',
+                placement: 'top',
+            });
+
+            // init emoji with chat area
+            $("#message_content").emojioneArea({
+              	pickerPosition: "top",
+                tonesStyle: "bullet",
+                inline: false,
+                tones: false,
+                search: false,
+                saveEmojisAs: "shortname",
+                events: {
+                    keypress: function (editor, event) {
+                        if (event.keyCode  == 13) {
+                           var content = $.sanitize(this.getText());
+                           var caret = getCaret(content);
+                           if(event.shiftKey){
+                               event.stopPropagation();
+                           } else {
+                                event.preventDefault();
+                                if (this.getText() != "") {
+                                    if (content.length < 1000) {
+                                        newMessage(content, 1);
+                                    }else{
+                                        alert("Your message is too long!")
+                                    }
+                                }
+                           }
+                        }
+                        updateLastTypedTime();
+                    },
+                    click: function (editor, event) {
+                        if ($(window).width() < 425) {
+                           $( ".buttons-showhide" ).trigger( "click" );
+                        }
+                    },
+                    blur: function (editor, event) {
+                        refreshTypingStatus();
+                        if ($(window).width() < 425) {
+                           $( ".buttons-showhide" ).trigger( "click" );
+                        }
+                    },
+                    ready: function (editor, event) {
+                        loadChats(active_user, active_group, active_room);
+                    }
+                }
+            });
+
+            var active_user = "";
+            var active_group = $("#active_group").val();
+            var active_room = $("#active_room").val();
+
+            loadActiveUsers();
+            getActiveInfo();
+
+        });
+
+        // after gif popover show functions
+        $('.message-gif').on('show.bs.popover', function () {
+            $('.chats').show();
+            $('.dropzone').hide();
+            $('.message-sticker').popover('hide');
+            $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+        });
+
+        // gif popover shown functions
+        $('.message-gif').on('shown.bs.popover', function () {
+            var results = get_gifs(tenor_api_key, tenor_gif_limit, "");
+        });
+
+        // gif search functions
+        $(document).on('click', '.gif-search-btn', function(e) {
+            var q = $('.gif-search-input').val();
+            get_gifs(tenor_api_key, tenor_gif_limit, q);
+        });
+
+        // gif send functions
+        $(document).on('click', '.send-gif', function(e) {
+            var gif_url = $(this).data('gif');
+            newMessage(gif_url, '3');
+        });
+
+        // stickers send functions
+        $(document).on('click', '.send-sticker', function(e) {
+            var sticker_url = $(this).data('sticker');
+            newMessage(sticker_url, '4');
+        });
+
+        // after sticker popover show functions
+        $('.message-sticker').on('show.bs.popover', function () {
+            $(".sticker-nav").empty();
+            $(".sticker-tab-content").empty();
+            $('.chats').show();
+            $('.dropzone').hide();
+            $('.message-gif').popover('hide');
+            $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+        });
+
+        // sticker popover shown functions
+        $('.message-sticker').on('shown.bs.popover', function () {
+            get_strickers();
+        });
+
+        // get sticker functions
+        function get_strickers(){
+            $.ajax({
+                url: "{{ url('ajax-get-stickers') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}'
+                },
+                beforeSend: function() {
+                    loading(".strickers","show");
+                },
+                success: function(data) {
+                    if (Object.keys(data.stickers).length > 0) {
+                        var sticker_set_count = 1;
+                        $.each(data.stickers, function( index, obj ) {
+                            if(sticker_set_count == 1){
+                                var act_class = 'active';
+                                var act_class_content = 'active show';
+                            }else{
+                                var act_class = '';
+                                var act_class_content = '';
+                            }
+                            var tab_html =
+                            `<li class="nav-item">
+                              <a class="nav-link `+act_class+`" id="pills-tab-`+sticker_set_count+`" data-toggle="pill" href="#sticker-pills-`+sticker_set_count+`" role="tab" >`+index+`</a>
+                            </li>`;
+                            $('.sticker-nav').append(tab_html);
+                            var sticker_list = '';
+                            $.each(obj, function( index, sticker ) {
+                                var sticker_url = '{{ MEDIA_URL }}/stickers/' + sticker;
+                                var sticker_html = `<div class="send-sticker" data-sticker="`+sticker+`"><img src="`+sticker_url+`" /></div>`;
+                                sticker_list += (sticker_html);
+                            });
+                            var tab_content_html =
+                            `<div class="tab-pane fade  `+act_class_content+`" id="sticker-pills-`+sticker_set_count+`" role="tabpanel" >
+                                `+ sticker_list +`
+                            </div>`
+                            $('.sticker-tab-content').append(tab_content_html);
+                            sticker_set_count++;
+                        });
+                    }else{
+                        $('.sticker-tab-content').append('<p class="text-center">No Stickers Found</p>');
+                    }
+                },complete: function(){
+                    loading(".strickers","hide");
+                }
+
+            });
+        }
+
+        // click link on chat message
+        $(document).on('click', '.chat-link', function(e) {
+            var clicked_link = $(this).parent().attr('href');
+            var a = document.createElement('a');
+            a.href = clicked_link;
+            var hostname = a.hostname;
+            if (hostname == 'www.youtube.com' || hostname == 'youtube.com' || hostname == 'youtu.be') {
+
+                videoid = youtube_parser(clicked_link);
+                if(videoid) {
+                    e.preventDefault();
+                    var embedlink = "https://www.youtube.com/embed/" + videoid + '?autoplay=1';
+                    $("#video-iframe").attr('src', embedlink);
+                    $("#video-modal").modal();
+                }
+            }
+        });
+
+        // video modal hide function
+        $("#video-modal").on('hide.bs.modal', function(){
+           $("#video-iframe").attr('src', "{{STATIC_URL}}/img/loading-video.gif");
+        });
+
+        // check user is typing
+        function refreshTypingStatus() {
+            if ($('#message_content').data("emojioneArea").getText().length == 0 || new Date().getTime() - lastTypedTime.getTime() > typingDelayMilliSe) {
+                is_typing = 0;
+            } else {
+                is_typing = 1;
+            }
+        }
+
+        // update user last type time
+        function updateLastTypedTime() {
+            lastTypedTime = new Date();
+        }
+
+        setInterval(refreshTypingStatus, 1000);
+
+        // Main chat heartbeat
+        var heartbeat_status = 1; //complete
+        window.setInterval(function(){
+            if(heartbeat_status == 1){
+                var active_user = $("#active_user").val();
+                var active_group = $("#active_group").val();
+                var active_room = $("#active_room").val();
+                var last_chat_id = $("#last_chat_id").val();
+                var chat_meta_id = $("#chat_meta_id").val();
+                $.ajax({
+                    url: "{{ url('ajax-heartbeat') }}",
+                    type: "POST",
+                    dataType: 'json',
+                    data: {
+                        csrftoken: '{{ csrf_token_ajax() }}',
+                        active_group: active_group,
+                        active_room: active_room,
+                        active_user: active_user,
+                        last_chat_id: last_chat_id,
+                        chat_meta_id: chat_meta_id,
+                        is_typing: is_typing,
+                    },
+                    beforeSend: function() {
+                        heartbeat_status = 2; //working
+                    },
+                    success: function(data) {
+                        heartbeat_status = 1; //complete
+                        if(data.typing_user){
+                            $('.is-typing').show();
+                            $('.is-typing span').html(data.typing_user);
+                        }else{
+                            $('.is-typing').hide();
+                            $('.is-typing span').html("");
+                        }
+                        if (data.chats) {
+                            $.each(data.chats, function( index, obj ) {
+                                createMessage(obj);
+                                $("#last_chat_id").val(obj.id);
+
+                                if(!data.is_muted){
+                                    play_chat_sound();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }, chat_receive_seconds);
+
+        // click recent room chat or individual chat
+        $(document).on('click', '.recent-chat', function(e) {
+            var active_user = $(this).data("user-id");
+            var active_group = $("#active_group").val();
+            var active_room = $("#active_room").val();
+            loadChats(active_user, active_group, active_room);
+            getActiveInfo();
+        });
+
+        // load selected room chat or individual chats
+        function loadChats(active_user, active_group, active_room){
+            $(".chats").empty();
+            $("#active_user").val(active_user);
+            $("#active_group").val(active_group);
+            $("#active_room").val(active_room);
+            $.ajax({
+                url: "{{ url('ajax-load-chats') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    active_user: active_user,
+                    active_group: active_group,
+                    active_room: active_room
+                },
+                beforeSend: function() {
+                    loading(".messages","show");
+                },
+                success: function(data) {
+                    $("#last_chat_id").val(0);
+                    $.each(data.chats, function( index, obj ) {
+                        createMessage(obj);
+                        $("#last_chat_id").val(obj.id);
+                    });
+
+                    $("#chat_meta_id").val(data.chat_meta_id);
+                    $("#last_updated_chat_time").val(data.last_updated_chat_time);
+                },complete: function(){
+                    $('.chat-scroll').imagesLoaded().then(function(){
+                        $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+                        loading(".messages","hide");
+                    });
+                }
+
+            });
+        }
+
+        // get selected chat information
+        function getActiveInfo(){
+            var active_user = $("#active_user").val();
+            var active_group = $("#active_group").val();
+            var active_room = $("#active_room").val();
+            $.ajax({
+                url: "{{ url('ajax-get-active-info') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    active_group: active_group,
+                    active_room: active_room,
+                    active_user: active_user,
+                },
+                beforeSend: function() {
+                    loading(".selected-chat-col","show");
+                },
+                success: function(data) {
+                    if (data.info_type == "user") {
+                        $('.active-group-info').hide();
+                        $('.active-user-info').show();
+                        $('.chat-title, .active-user-title, .active-user-name').html(data.info.first_name + " " + data.info.last_name);
+                        $('.active-user-dob').html(data.info.dob);
+                        $('.chat-slug').html("@"+data.info.user_name);
+                        var gender = "Other";
+                        if(data.info.sex == 1){
+                            gender = "Male";
+                        }else if(data.info.sex == 2){
+                            gender = "Female";
+                        }else{
+                            gender = "Other";
+                        }
+                        $('.active-user-gender').html(gender);
+                        $(".active-user-avatar").attr("src", data.info.avatar_url);
+                        $('.active-user-about').html(data.info.about);
+                        $('.active-user-favourite').attr('data-is-favourite', data.info.is_favourite);
+                        $('.active-user-mute').attr('data-is-muted', data.info.is_muted);
+                        $('.active-user-block').attr('data-is-blocked', data.info.blocked_by_you);
+                        if(data.info.is_favourite){
+                            $('.active-user-favourite .text').html('Favorite <i class="far fa-check-circle"></i>');
+                        }else{
+                            $('.active-user-favourite .text').html('Favorite');
+                        }
+
+                        if(data.info.blocked_by_you){
+                            restrictTypingArea(data.info.blocked_by_you, 'Blocked by you');
+                        }else if (data.info.blocked_by_him) {
+                            restrictTypingArea(data.info.blocked_by_him, 'Blocked by user');
+                        }else{
+                            restrictTypingArea(0, '');
+                        }
+
+                        if(data.info.blocked_by_you){
+                            $('.active-user-block .text').html('Unblock');
+                        }else{
+                            $('.active-user-block .text').html('Block');
+                        }
+
+                        if(data.info.is_muted){
+                            $('.active-user-mute .text').html('Muted');
+                            $('.active-user-mute .icon').html('<i class="fas fa-bell-slash"></i>');
+                        }else{
+                            $('.active-user-mute .text').html('Mute');
+                            $('.active-user-mute .icon').html('<i class="fas fa-bell"></i>');
+                        }
+                    }else if (data.info_type == "group") {
+                        restrictTypingArea(0, '');
+                        $('.active-user-info').hide();
+                        $('.active-group-info').show();
+                        $(".active-group-cover").attr("src", data.info.cover_url);
+                        $('.chat-title, .active-group-name').html(data.info.room_data.name + "/" + data.info.name);
+                        $('.chat-slug').html("@"+data.info.slug);
+                        $('.active-group-mute').attr('data-is-muted', data.info.is_muted);
+
+                        if(data.info.is_muted){
+                            $('.active-group-mute .text').html('Muted');
+                            $('.active-group-mute .icon').html('<i class="fas fa-bell-slash"></i>');
+                        }else{
+                            $('.active-group-mute .text').html('Mute');
+                            $('.active-group-mute .icon').html('<i class="fas fa-bell"></i>');
+                        }
+
+                        var group_users = ``;
+                        $.each(data.group_users, function( index, obj ) {
+                            var each_user = '<div class="row"><div class="col-12">' + obj.first_name + ' ' + obj.last_name + '</div></div>';
+                            group_users = group_users + each_user;
+                        });
+                        $('#group-users-tab').html(group_users);
+                    }
+
+                    var img_count = 0;
+                    var recent_img_chat = ``;
+                    $.each(data.shared_photos, function(all_img_idx, all_img_obj) {
+                        $.each(JSON.parse(all_img_obj), function(img_idx, img_obj) {
+                            if(img_count < 12){
+                                var image_size_str = img_obj.split('_');
+                                var image_size = "600x600";
+                                if (image_size_str[1] !== undefined) {
+                                    image_size = image_size_str[1].substring(0, image_size_str[1].indexOf("."))
+                                }
+
+                                var each_img = `<figure class="col-3 p-0">
+                                                <a  href="{{MEDIA_URL}}/chats/images/large/`+img_obj+`" data-size="`+image_size+`">
+                                                    <img class="img-responsive" width="50px" src="{{MEDIA_URL}}/chats/images/thumb/`+img_obj+`" />
+                                                </a>
+                                            </figure>`;
+                                recent_img_chat = recent_img_chat + each_img;
+                                img_count++;
+                            }
+                        });
+                    });
+                    $('.recent-img-chat').html(recent_img_chat);
+                    initPhotoSwipeFromDOM('.recent-img-chat');
+                },complete: function(){
+                    loading(".selected-chat-col","hide");
+                }
+            });
+        }
+
+        // Left sidebar active user list heartbeat
+        window.setInterval(function(){
+            loadActiveUsers();
+        }, user_list_check_seconds);
+
+        // load active users
+        function loadActiveUsers(){
+            var active_room = $("#active_room").val();
+            $.ajax({
+                url: "{{ url('ajax-online-list') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    active_room: active_room,
+                },
+                success: function(data) {
+                    $('.online-list').empty();
+                    $('.fav-list').empty();
+                    if ('default_group' in data) {
+                        var unread_count_html = "";
+                        var group_mute_icon = "";
+                        if(data.default_group.unread_count > 0){
+                            unread_count_html = `<span class="badge badge-danger badge-counter">` + data.default_group.unread_count + `</span>`;
+                        }
+                        if(data.default_group.is_muted){
+                            group_mute_icon = `<i class="fas fa-bell-slash"></i>`;
+                        }
+                        var group_li =
+                        `<li id="" class="recent-chat" data-user-id="">
+                            <div class="user-list-item ">
+                                <div class="user-avatar">
+                                    <img class="img-profile rounded-circle mr-2" width="50px" src="` + data.default_group.cover_url + `">
+                                </div>
+                                <div class="user-info">
+                                    <div class="chat-name">` + data.default_group.name + ` ` + group_mute_icon + `</div>
+                                    <div class="chat-preview">
+                                        ` + data.default_group.room_data.name + ` Chat Room
+                                    </div>
+                                </div>
+                                <div class="chat-meta">` + unread_count_html + `</div>
+                            </div>
+                        </li>`;
+
+                        $('.online-list').append(group_li);
+
+                    }
+
+                    if ('list' in data) {
+
+                        $.each(data.list, function( index, obj ) {
+                            if(obj.avatar) {
+                                var img_src = "{{MEDIA_URL}}/avatars/"+obj.avatar;
+                            }else{
+                                var img_src = "{{STATIC_URL}}/img/user.jpg";
+                            }
+
+                            var list_user_timezone = obj.timzone;
+                            var user_status_class = "offline";
+                            var last_seen_plus_10sec = moment(obj.last_seen+system_timezone_offset).tz(system_timezone).add(onlineCheckMilliSe, 'ms');
+                            if(moment(last_seen_plus_10sec).isBefore(moment().tz(system_timezone))){
+                                user_status_class = "offline";
+                            }else{
+                                if(obj.user_status == 1){
+                                    user_status_class = "online";
+                                }else if(obj.user_status == 2){
+                                    user_status_class = "offline";
+                                }else if(obj.user_status == 3){
+                                    user_status_class = "busy";
+                                }else if(obj.user_status == 4){
+                                    user_status_class = "away";
+                                }
+                            }
+
+                            var last_msg = "Blocked";
+                            var last_message_time = "";
+                            var space_dot = "";
+                            var unread_count = "";
+                            var unread_count_html = "";
+                            var mute_icon = "";
+
+                            if(!obj.blocked_by_him && !obj.blocked_by_you){
+                                if(obj.last_message_type == 1){
+                                    last_msg = obj.last_message;
+                                }else if(obj.last_message_type == 2){
+                                    last_msg = "<i class='fa fa-image'></i> Image";
+                                }else if(obj.last_message_type == 3){
+                                    last_msg = "<i class='fa fa-image'></i> GIF";
+                                }else{
+                                    last_msg = "Say hi to " + obj.first_name ;
+                                }
+
+                                last_message_time = "";
+                                space_dot = "";
+                                if(obj.last_message_time){
+                                    last_message_time = moment(obj.last_message_time+system_timezone_offset).tz(user_timezone).fromNow();
+                                    space_dot = "·";
+                                }
+
+                                unread_count = 0;
+                                if(obj.unread_count ){
+                                    unread_count = obj.unread_count;
+                                }
+
+                                unread_count_html = "";
+                                if(unread_count > 0){
+                                    unread_count_html = `<span class="badge badge-danger badge-counter">` + unread_count + `</span>`;
+                                }
+                            }else if(obj.blocked_by_you){
+                                last_msg = "Blocked by you";
+                            }else if(obj.blocked_by_him){
+                                last_msg = "Blocked by user";
+                            }
+
+                            if(obj.is_muted){
+                                mute_icon = '<i class="fas fa-bell-slash"></i>';
+                            }
+
+                            var chat_li =
+                            `<li id="" class="recent-chat" data-user-id="` + obj.user_id + `">
+                                <div class="user-list-item ">
+                                    <div class="user-avatar">
+                                        <div class="online-status ` + user_status_class + `"><i class="fa fa-circle"></i></div>
+                                        <img class="img-profile rounded-circle mr-2" width="50px" src="`+img_src+`">
+                                    </div>
+                                    <div class="user-info">
+                                        <div class="chat-name">` + obj.first_name + ` ` + obj.last_name + `  ` + mute_icon+ `</div>
+                                        <div class="chat-preview">
+                                            <span class="chat-is-read">` + last_msg + `</span>
+                                            <div aria-hidden="true" class="spacer-dot">` + space_dot + `</div>
+                                            <abbr class="chat-time" data-utime="">` + last_message_time + `</abbr>
+                                        </div>
+                                    </div>
+                                    <div class="chat-meta">` + unread_count_html + `</div>
+                                </div>
+                            </li>`;
+
+                            $('.online-list').append(chat_li);
+
+                            if(obj.is_favourite && !obj.blocked_by_you){
+                                $('.fav-list').append(chat_li);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Message read status heartbeat
+        window.setInterval(function(){
+            var active_user = $("#active_user").val();
+            var active_group = $("#active_group").val();
+            var active_room = $("#active_room").val();
+            var last_updated_chat_time = $("#last_updated_chat_time").val();
+            $.ajax({
+                url: "{{ url('ajax-updated-chats') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    active_group: active_group,
+                    active_room: active_room,
+                    active_user: active_user,
+                    last_updated_chat_time: last_updated_chat_time,
+                },
+                success: function(data) {
+                    if (data.updated_chats) {
+                        $.each(data.updated_chats, function( index, obj ) {
+                            var updated_li = $(".messages ul").find("li[id="+ obj.id +"]");
+                            if (obj.status == 2) {
+                                $(updated_li).find('.message-status').addClass('read');
+                            }
+                        });
+                    }
+                }
+            });
+        }, chat_status_check_seconds);
+
+        // click image send button
+        $(document).on('click', '.message-files', function(e) {
+            $('.chats').toggle();
+            $('.dropzone').toggle();
+            $('.message-sticker, .message-gif').popover('hide');
+            $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+        });
+
+        // popover close button
+        $(document).on('click','.close-popover',function(){
+            $('.message-sticker, .message-gif').popover('hide');
+        });
+
+        // init dropzone
+        Dropzone.autoDiscover = false;
+        var chatDropzone = new Dropzone(".dropzone", {
+            url: "{{ url('ajax-send-files') }}",
+            autoProcessQueue: false,
+            addRemoveLinks: true,
+            uploadMultiple: true,
+            parallelUploads: 10,
+            acceptedFiles: 'image/*',
+            init: function () {
+                this.on("sendingmultiple", function(file, xhr, data) {
+                    var active_user = $("#active_user").val();
+                    var active_group = $("#active_group").val();
+                    var active_room = $("#active_room").val();
+                    if (active_user) {
+                        active_group = null;
+                    }
+                    data.append("active_user", active_user);
+                    data.append("active_group", active_group);
+                    data.append("active_room", active_room);
+                    data.append("csrftoken", '{{ csrf_token_ajax() }}');
+                });
+                this.on('successmultiple', function(files, response) {
+                    chatDropzone.removeAllFiles();
+                    newMessage(response, 2);
+                    $('.chats').toggle();
+                    $('.dropzone').toggle();
+                    $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+                })
+            }
+        });
+
+        // send selected image
+        $('.send-files').on("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            chatDropzone.processQueue();
+        });
+
+        // Drag enter
+        $('.chat-scroll').on('dragover, dragenter', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            $('.chats').toggle();
+            $('.dropzone').toggle();
+            $('.message-sticker, .message-gif').popover('hide');
+        });
+
+        // message create and append to the chat container
+        function createMessage(obj, more_chats=false, save_message=false){
+            var sender_div = "";
+            var is_group = "";
+            if (obj.sender_id == {{ USER.id }} ) {
+                var message_class_name = "sent";
+                var msg_status = '<i class="fa fa-check-double"></i>';
+                var msg_status_class = '';
+                if (obj.status == 2) {
+                    msg_status_class = 'read';
+                }
+            }else{
+                var message_class_name = "replies";
+                var msg_status = '';
+                var msg_status_class = '';
+                if(obj.chat_type == "group"){
+                    is_group = "grp";
+                    sender_div = "<small>"+obj.first_name +" "+obj.last_name +" </small>";
+                }
+            }
+
+            if(!obj.random_id){
+                obj.random_id = "";
+            }
+
+            if(obj.avatar) {
+                var img_src = "{{MEDIA_URL}}/avatars/"+obj.avatar;
+            }else{
+                var img_src = "{{STATIC_URL}}/img/user.jpg";
+            }
+            var msg = "";
+            if(obj.type == 1){
+                msg = (emojione.shortnameToImage(linkParse(htmlEncode(obj.message))));
+                msg = `<div class="chat-txt">`+msg+`</div>`;
+            }else if(obj.type == 2){
+                var images = JSON.parse(obj.message);
+                if (images.length > 2) {
+                    msg = `<div class="chat-img-grp chat-gallery" data-pswp-uid="1">`;
+                    var n = 1;
+                    var more_overlay = "";
+                    var each_img = "";
+                    $.each(JSON.parse(obj.message), function(img_idx, img_obj) {
+                        var image_size_str = img_obj.split('_');
+                        var image_size = "600x600";
+                        if (image_size_str[1] !== undefined) {
+                            image_size = image_size_str[1].substring(0, image_size_str[1].indexOf("."))
+                        }
+                        if (n > 3) {
+                            var cls = "chat-img d-none";
+                        }else if (n == 3) {
+                            if (images.length - 2 != 1)  {
+                                var cls = "chat-img more";
+                                more_overlay = `<span class="more-ovrlay">+`+(images.length - 3).toString()+`</span>`;
+                            }else{
+                                var cls = "chat-img";
+                            }
+                        }else{
+                            var cls = "chat-img";
+                        }
+                        each_img = `<figure class="`+cls+`">
+                                		<a href="{{MEDIA_URL}}/chats/images/large/`+img_obj+`" data-size="`+image_size+`">
+                                            <img src="{{MEDIA_URL}}/chats/images/thumb/`+img_obj+`" />
+                                            `+more_overlay+`
+                                        </a>
+                                	</figure>`;
+                        msg = msg + each_img;
+                        n++;
+                    });
+                    msg = msg + "</div>";
+                }else if (images.length == 2) {
+                    msg = `<div class="chat-img-duo chat-gallery" data-pswp-uid="1"">`;
+                    $.each(JSON.parse(obj.message), function(img_idx, img_obj) {
+                        var image_size_str = img_obj.split('_');
+                        var image_size = "600x600";
+                        if (image_size_str[1] !== undefined) {
+                            image_size = image_size_str[1].substring(0, image_size_str[1].indexOf("."))
+                        }
+                        each_img = `<figure >
+                                        <a href="{{MEDIA_URL}}/chats/images/large/`+img_obj+`" data-size="`+image_size+`">
+                                            <img src="{{MEDIA_URL}}/chats/images/thumb/`+img_obj+`" />
+                                        </a>
+                                    </figure>`;
+                        msg = msg + each_img;
+                    });
+                    msg = msg + "</div>";
+                }else{
+                    msg = `<div class="chat-img-sgl chat-gallery" data-pswp-uid="1"">`;
+                    $.each(JSON.parse(obj.message), function(img_idx, img_obj) {
+                        var image_size_str = img_obj.split('_');
+                        var image_size = "600x600";
+                        if (image_size_str[1] !== undefined) {
+                            image_size = image_size_str[1].substring(0, image_size_str[1].indexOf("."))
+                        }
+
+                        each_img = `<figure>
+                                        <a href="{{MEDIA_URL}}/chats/images/large/`+img_obj+`" data-size="`+image_size+`">
+                                            <img src="{{MEDIA_URL}}/chats/images/thumb/`+img_obj+`" />
+                                        </a>
+                                    </figure>`;
+                        msg = msg + each_img;
+                    });
+                    msg = msg + "</div>";
+                }
+
+            }else if(obj.type == 3){
+                msg = `<div class="chat-gif"> <img src="`+obj.message+`" /> </div>`;
+            }else if (obj.type == 4){
+                msg = `<div class="chat-sticker"> <img src={{MEDIA_URL}}/stickers/`+encodeURI(obj.message)+` /> </div>`;
+            }
+
+            var new_chat_date = moment(obj.time+system_timezone_offset).tz(user_timezone).format('dddd, MMM D, YYYY');
+            var msg_content = `<li class="`+message_class_name+`" id="`+obj.id+`" data-random-id="`+obj.random_id+`" data-date="`+new_chat_date+`">
+                                    <img width="50px" class="avatar" src="`+img_src+`"  />
+                                    <div class="message-data `+is_group+`">
+                                        `+sender_div+`
+                                        <div class="message-html">`+ msg +`</div>
+                                    </div>
+                                    <span class="message-meta">
+                                        <span class="message-time">`+ moment(obj.time+system_timezone_offset).tz(user_timezone).format('hh:mm A') +`</span>
+                                        <span class="message-status `+msg_status_class+`">`+ msg_status +`</span>
+                                    </span>
+                                </li>`;
+
+            if(more_chats){
+                $(msg_content).prependTo($('.messages ul'));
+            }else{
+                $(msg_content).appendTo($('.messages ul'));
+            }
+            $(".messages  ul").find(`[data-printed-date='`+new_chat_date+`']`).remove();
+            $(".messages  ul").find(`[data-date='`+new_chat_date+`']:first`).before(`<li class="new-date" data-printed-date="`+new_chat_date+`"><p>`+new_chat_date+`</p></li>`);
+
+            initPhotoSwipeFromDOM('.chat-gallery');
+
+            if(save_message){
+                $('.chat-scroll').imagesLoaded().then(function(){
+                    $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+                });
+            }else if (more_chats) {
+                $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight - previous_height);
+            }else if($('.chat-scroll')[0].scrollHeight - $('.chat-scroll').scrollTop() - $('.chat-scroll').height() < 350){
+                $('.chat-scroll').scrollTop($('.chat-scroll')[0].scrollHeight);
+            }
+
+            chat_date = new_chat_date;
+
+        }
+
+        // mobile sidebar show or minimize
+        $(document).on('click', '.mobile-sidebar-toggle', function(e) {
+            $(this).removeClass('active');
+            var icon_class = $(this).find('i').attr("class");
+            $('.mobile-sidebar-icon > i').removeClass().addClass(icon_class);
+        });
+
+        // change user status
+        $(document).on('click', '.change-status', function(e) {
+            var icon_class = $(this).find('i').attr("class");
+            icon_class = icon_class.replace('fa-fw mr-2','');
+            $('.current-status > i').removeClass().addClass(icon_class);
+            var new_status = $(this).attr("data-status");
+            $.ajax({
+                url: "{{ url('ajax-change-user-status') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    new_status: new_status,
+                }
+            });
+
+        });
+
+        // favourite or unfavourite the selected chat user
+        $(document).on('click', '.active-user-favourite', function(e) {
+            var current_status = $(this).attr("data-is-favourite");
+            changeActiveUserRestriction('is_favourite', current_status);
+        });
+
+        // block or unblock the selected chat user
+        $(document).on('click', '.active-user-block', function(e) {
+            var current_status = $(this).attr("data-is-blocked");
+            changeActiveUserRestriction('is_blocked', current_status);
+        });
+
+        // mute or unmute the selected chat user
+        $(document).on('click', '.active-user-mute', function(e) {
+            var current_status = $(this).attr("data-is-muted");
+            changeActiveUserRestriction('is_muted', current_status);
+        });
+
+        // mute or unmute the selected chat group
+        $(document).on('click', '.active-group-mute', function(e) {
+            var current_status = $(this).attr("data-is-muted");
+            changeActiveGroupRestriction('is_muted', current_status);
+        });
+
+        // change user restrictions
+        function changeActiveUserRestriction(restriction_type, current_status){
+            var chat_meta_id = $("#chat_meta_id").val();
+            $.ajax({
+                url: "{{ url('ajax-active-user-restriction') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    restriction_type: restriction_type,
+                    current_status: current_status,
+                    chat_meta_id: chat_meta_id,
+                },
+                success: function(data) {
+                    if(data.success){
+                        getActiveInfo();
+                        if(data.type == "is_blocked"){
+                            restrictTypingArea(data.status, "Blocked by you");
+                        }
+                    }
+                }
+            });
+        }
+
+        // restrict or unrestrict chat typing area
+        function restrictTypingArea(restrict_type, restrict_msg){
+            if(restrict_type == 1){
+                $('.type-blocked-overlay').show();
+                $('.type-blocked-overlay').text(restrict_msg);
+                $('#message_content').data("emojioneArea").disable();
+                $('.message-files').css({"pointer-events": "none"});
+                $(".message-gif, .message-sticker").popover('disable');
+            }else{
+                $('.type-blocked-overlay').hide();
+                $('.type-blocked-overlay').text("Blocked User");
+                $('#message_content').data("emojioneArea").enable();
+                $('.message-files').css({"pointer-events": "unset"});
+                $(".message-gif, .message-sticker").popover('enable');
+            }
+        }
+
+        // change group restrictions
+        function changeActiveGroupRestriction(restriction_type, current_status){
+            var chat_meta_id = $("#chat_meta_id").val();
+            $.ajax({
+                url: "{{ url('ajax-active-group-restriction') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    restriction_type: restriction_type,
+                    current_status: current_status,
+                    chat_meta_id: chat_meta_id,
+                },
+                success: function(data) {
+                    if(data.success){
+                        getActiveInfo();
+                    }
+                }
+            });
+        }
+
+        // chat area scroll
+        $('.chat-scroll').scroll(function() {
+            if($('.chat-scroll').scrollTop() == 0){
+                previous_height = $('.chat-scroll')[0].scrollHeight;
+                load_more_chats();
+            }
+        });
+
+        // load more chats
+        function load_more_chats(){
+            var active_user = $("#active_user").val();
+            var active_group = $("#active_group").val();
+            var active_room = $("#active_room").val();
+            $.ajax({
+                url: "{{ url('ajax-load-more-chats') }}",
+                type: "POST",
+                dataType: 'json',
+                data: {
+                    csrftoken: '{{ csrf_token_ajax() }}',
+                    active_user: active_user,
+                    active_group: active_group,
+                    active_room: active_room
+                },
+                beforeSend: function() {
+                    loading(".messages","show");
+                },
+                success: function(data) {
+                    $.each(data.chats, function( index, obj ) {
+                        createMessage(obj, true);
+                    });
+
+                },complete: function(){
+                    $('.chat-scroll').imagesLoaded().then(function(){
+                        loading(".messages","hide");
+                    });
+                }
+
+            });
+        }
+
+        function play_chat_sound() {
+            audio.play();
+        }
+
+    })(jQuery);
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,123 @@
+<div class="row">
+    <div class="col-3">
+        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <a class="nav-link active" id="room-info-tab" data-toggle="pill" href="#room-info" role="tab" aria-controls="room-info" aria-selected="true">General</a>
+            <a class="nav-link" id="room-users-tab" data-toggle="pill" href="#room-users" role="tab" aria-controls="room-users" aria-selected="false">Room Users</a>
+            <a class="nav-link" data-dismiss="modal" href="javascript:void(0);" aria-label="Close" >Close</a>
+        </div>
+    </div>
+    <div class="col-9">
+        <div class="tab-content" id="v-pills-tabContent">
+            <div class="alert alert-danger chatroom-error" role="alert" style="display:none"></div>
+            <div class="alert alert-success chatroom-success" role="alert" style="display:none"></div>
+            <div class="tab-pane fade show active" id="room-info" role="tabpanel" aria-labelledby="room-info-tab">
+                <div class="card card-room-info">
+                    <div class="card-body">
+                        <form id="chatroom-info" enctype="multipart/form-data">
+                            {{ csrf_token()|raw }}
+                            <input type="hidden" name="room_id" id="room_id" value="{{chat_room.id}}">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="name">Name</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Room Name" value="{{chat_room.name}}">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="description">Description</label>
+                                <div class="col-sm-9">
+                                    <textarea name="description" id="description" class="form-control" rows="4" placeholder="Room Description">{{chat_room.description}}</textarea>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="slug">Slug</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="slug" name="slug" placeholder="Room Slug" value="{{chat_room.slug}}">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-5 col-form-label"  for="is_protected">
+                                    Is password protected?
+                                    <input type="checkbox" name="is_protected" id="is_protected"
+                                        {% if chat_room.is_protected %} checked {% endif %}>
+                                </label>
+                                <label class="col-sm-2 col-form-label pin-area" {% if chat_room.is_protected %}style="display:block"{% else %}style="display:none"{% endif %} for="password"><span class="float-right">Pin</span></label>
+                                <div class="col-sm-5 pin-area" {% if chat_room.is_protected %}style="display:block"{% else %}style="display:none"{% endif %}>
+                                    <input type="text" class="form-control" id="pin" name="pin" value="{{chat_room.password}}">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-12 col-form-label"  for="is_visible">
+                                    Is visible to everyone?
+                                    <input type="checkbox" name="is_visible" id="is_visible"
+                                                            {% if chat_room %}
+                                                                {% if chat_room.is_visible %}
+                                                                    checked
+                                                                {% endif %}
+                                                            {% else %}
+                                                                checked
+                                                            {% endif %}>
+                                </label>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="slug">Cover image</label>
+                                <div class="col-sm-6">
+                                    <input type="file" class="form-control-file upload-cover-image" id="cover_image" name="cover_image" value="">
+                                </div>
+                                <div class="col-3">
+                                    <div class="room-coverimage-preview">
+                                        {% if chat_room.cover_image %}
+                                            <img class="img-responsive" height="100%" src="{{MEDIA_URL}}/chatrooms/{{chat_room.cover_image}}"  alt="">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label" for="status">Status</label>
+                                <div class="col-sm-9">
+                                    <select class="form-control" name="status" id="status">
+                                        <option value="1" {% if chat_room.status == 1 %} selected {% endif %}>Active</option>
+                                        <option value="2" {% if chat_room.status == 2 %} selected {% endif %}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary update-chatroom">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="room-users" role="tabpanel" aria-labelledby="room-users-tab">
+                <div class="card card-room-users">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for room_user in room_users %}
+                                        <tr>
+                                            <td>{{room_user.first_name}} {{room_user.last_name}}</td>
+                                            <td>{{room_user.email}}</td>
+                                            <td>
+                                                <a href="javascript:void(0)" class="btn btn-danger btn-xs chatroom-user-restriction kick-btn" data-user="{{room_user.id}}" data-restriction-type="3"
+                                                    {% if room_user.status == "1" %} style="display:block" {% else %} style="display:none" {% endif %}>kick
+                                                </a>
+                                                <a href="javascript:void(0)" class="btn btn-warning btn-xs chatroom-user-restriction unkick-btn" data-user="{{room_user.id}}" data-restriction-type="1"
+                                                    {% if room_user.status == "3" %} style="display:block" {% else %} style="display:none" {% endif %}>unkick
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
